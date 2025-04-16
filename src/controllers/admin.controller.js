@@ -1,3 +1,4 @@
+import Admin from "../models/admin.model.js";
 import Blog from "../models/blog.model.js";
 import cloudinary from "../utils/cloudinary.js";
 
@@ -15,18 +16,19 @@ export const uploadBlog = async (req, res) => {
     return res.status(400).json({ message: "Image upload failed" });
   }
 
-  const imageUrl = imageUpload.secure_url;
+  const imageUrl =imageUpload.secure_url;
 
   try {
     const blog = await Blog.create({
       title,
       description,
-      image: imageUrl,
+      imageUrl,
     });
     return res
       .status(200)
       .json({ message: "Blog uploaded successfully", blog });
   } catch (error) {
+    console.log("Error in uploading blog:", error); 
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -55,19 +57,10 @@ export const getSpecificBlog = async (req, res) => {
 
 export const editBlog = async (req, res) => {
   const { id } = req.params;
-  const { title, description, image } = req.body;
+  const { title, description } = req.body;
 
   try {
     const updatedData = { title, description };
-
-    if (image) {
-      const imageUpload = await cloudinary.uploader.upload(image, {
-        folder: "blog",
-      });
-      if (imageUpload) {
-        updatedData.image = imageUpload.secure_url;
-      }
-    }
 
     const blog = await Blog.findByIdAndUpdate(id, updatedData, { new: true });
 
@@ -94,9 +87,7 @@ export const deleteBlog = async (req, res) => {
   }
 };
 
-
 export const updatePassword = async (req, res) => {
-  const { userId } = req.params;
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
@@ -104,11 +95,7 @@ export const updatePassword = async (req, res) => {
   }
 
   try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
+    const user = await Admin.findOne({});
     if (user.password !== currentPassword) {
       return res.status(401).json({ message: "Current password is incorrect" });
     }
@@ -118,6 +105,7 @@ export const updatePassword = async (req, res) => {
 
     return res.status(200).json({ message: "Password updated successfully" });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({ message: "Failed to update password" });
   }
 };
